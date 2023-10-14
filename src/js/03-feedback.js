@@ -1,50 +1,44 @@
 import throttle from 'lodash.throttle';
 
-const feedbackForm = document.querySelector('.feedback-form');
+const form = document.querySelector('.feedback-form');
+const LOCALESTORAGE_KEY = 'feedback-form-state';
 
-// Функція для збереження даних в локальному сховищі
-function saveDataToLocalStorage() {
-  const email = feedbackForm.email.value;
-  const message = feedbackForm.message.value;
-  
-  // Зберігаємо дані у локальному сховищі
-  localStorage.setItem('feedback-form-state', JSON.stringify({ email, message }));
+form.addEventListener('submit', submitForm);
+form.addEventListener(
+  'input',
+  throttle(() => {
+    localStorage.setItem(LOCALESTORAGE_KEY, JSON.stringify(getText()));
+  }, 500)
+);
+updateText();
+
+function getText() {
+  const user = {};
+  const email = form.elements.email.value;
+  const message = form.elements.message.value;
+  if (email !== '' || message !== '') {
+    user.email = email;
+    user.message = message;
+    return user;
+  }
 }
 
-// Застосовуємо затримку не частіше, ніж раз на 500 мс
-const throttledSaveDataToLocalStorage = throttle(saveDataToLocalStorage, 500);
-
-// Перевіряємо стан локального сховища при завантаженні сторінки
-const savedData = localStorage.getItem('feedback-form-state');
-
-if (savedData) {
-  const formData = JSON.parse(savedData);
-  feedbackForm.email.value = formData.email;
-  feedbackForm.message.value = formData.message;
+function updateText() {
+  const storage = localStorage.getItem(LOCALESTORAGE_KEY);
+  if (storage !== null) {
+    const storageText = JSON.parse(storage);
+    form.elements.email.value = storageText.email;
+    form.elements.message.value = storageText.message;
+  }
 }
 
-// Встановлюємо обробник події "submit" на формі
-feedbackForm.addEventListener('submit', handleSubmit);
-
-// Функція для обробки події "submit"
-function handleSubmit(event) {
+function submitForm(event) {
   event.preventDefault();
-  
-  // Виводимо об'єкт з полями email та message у консоль
-  const email = feedbackForm.email.value;
-  const message = feedbackForm.message.value;
-  console.log({ email, message });
-
-  // Очищаємо локальне сховище
-  localStorage.removeItem('feedback-form-state');
-
-  // Очищаємо поля форми
-  feedbackForm.email.value = '';
-  feedbackForm.message.value = '';
+  const email = form.elements.email.value;
+  const message = form.elements.message.value;
+  if (email !== '' && message !== '') {
+    console.log(getText());
+    form.reset();
+    localStorage.removeItem(LOCALESTORAGE_KEY);
+  }
 }
-
-// Додаємо обробники подій "input" на поля форми для виклику затриманої функції
-feedbackForm.email.addEventListener('input', throttledSaveDataToLocalStorage);
-feedbackForm.message.addEventListener('input', throttledSaveDataToLocalStorage);
-
-
